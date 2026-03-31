@@ -1,3 +1,4 @@
 /.env
 /firebase-config.js
 /firebase-debug.log
+/firestore.rule
