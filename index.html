@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MeetGrid – Find a Time Together</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- HOME / CREATE VIEW -->
+  <div id="app">
+    <div id="home-view" class="view active">
+      <div class="hero">
+        <div class="logo-mark">⬡</div>
+        <h1>MeetGrid</h1>
+        <p class="tagline">Find the perfect time — no account needed.</p>
+      </div>
+
+      <div class="card create-card">
+        <h2>Create an Event</h2>
+
+        <div class="field">
+          <label>Event Name</label>
+          <input type="text" id="event-title" placeholder="e.g. Movie Night, Study Group…" />
+        </div>
+
+        <div class="field">
+          <label>Select Dates</label>
+          <div id="date-picker-container">
+            <div id="calendar-nav">
+              <button id="prev-month">&#8249;</button>
+              <span id="month-label"></span>
+              <button id="next-month">&#8250;</button>
+            </div>
+            <div id="calendar-grid"></div>
+            <div id="selected-dates-list"></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Time Range</label>
+          <div class="time-range-row">
+            <select id="start-hour"></select>
+            <span class="to-label">to</span>
+            <select id="end-hour"></select>
+          </div>
+        </div>
+
+        <button id="create-btn" class="btn-primary">Create Event & Get Link →</button>
+      </div>
+
+      <footer>No sign-up. No data stored on servers. Just vibes.</footer>
+    </div>
+
+    <!-- EVENT VIEW -->
+    <div id="event-view" class="view">
+
+      <div class="event-header">
+        <a href="#" id="back-home" class="back-link">← New Event</a>
+        <div class="event-title-wrap">
+          <h1 id="event-name-display"></h1>
+          <div class="share-row">
+            <input type="text" id="share-url" readonly />
+            <button id="copy-btn" class="btn-copy">Copy Link</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="event-body">
+
+        <!-- Left: Name entry + participant list -->
+        <aside class="sidebar">
+          <div class="card">
+            <h3>Your Name</h3>
+            <input type="text" id="participant-name" placeholder="Enter your name…" />
+            <p class="helper-text">Use the same name to edit, rename, or remove your saved slots.</p>
+            <button id="start-filling-btn" class="btn-primary" style="margin-top:12px;width:100%">Fill My Availability</button>
+            <div class="participant-actions">
+              <button id="save-availability-btn" class="btn-copy action-btn">Save Changes</button>
+              <button id="rename-btn" class="btn-copy action-btn">Change Name</button>
+              <button id="delete-btn" class="action-btn btn-danger">Delete Availability</button>
+            </div>
+          </div>
+
+          <div class="card" id="participants-card">
+            <h3>Who's filled in</h3>
+            <ul id="participants-list"></ul>
+          </div>
+
+          <div class="card" id="best-times-card">
+            <h3>🏆 Best Times</h3>
+            <ul id="best-times-list"></ul>
+          </div>
+        </aside>
+
+        <!-- Right: Grid -->
+        <main class="grid-area">
+          <div id="mode-tabs">
+            <button class="tab-btn active" data-mode="edit" id="edit-tab">My Availability</button>
+            <button class="tab-btn" data-mode="group" id="group-tab">Group View</button>
+          </div>
+
+          <div id="grid-wrapper">
+            <div id="grid-scroll">
+              <div id="availability-grid"></div>
+            </div>
+            <div id="grid-legend">
+              <span class="legend-item"><span class="legend-dot free"></span> Free</span>
+              <span class="legend-item"><span class="legend-dot busy"></span> Busy</span>
+              <span class="legend-item" id="group-legend" style="display:none">
+                <span class="legend-gradient"></span> More people →
+              </span>
+            </div>
+          </div>
+        </main>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div id="toast" class="toast hidden">Link copied!</div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>

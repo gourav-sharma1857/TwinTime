@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /meetgrid_events/{eventId} {
+      allow read: if true;
+      allow create, update: if isValidEvent();
+      allow delete: if true;
+
+      function isValidEvent() {
+        return request.resource.data.keys().hasOnly([
+            'title',
+            'dates',
+            'start_hour',
+            'end_hour',
+            'availability',
+            'createdAt',
+            'updatedAt'
+          ]) &&
+          request.resource.data.title is string &&
+          request.resource.data.title.size() > 0 &&
+          request.resource.data.title.size() <= 120 &&
+          request.resource.data.dates is list &&
+          request.resource.data.dates.size() > 0 &&
+          request.resource.data.dates.size() <= 31 &&
+          request.resource.data.start_hour is number &&
+          request.resource.data.end_hour is number &&
+          request.resource.data.start_hour >= 0 &&
+          request.resource.data.end_hour <= 24 &&
+          request.resource.data.end_hour > request.resource.data.start_hour &&
+          request.resource.data.availability is map &&
+          request.resource.data.availability.size() <= 100;
+      }
+    }
+  }
+}
