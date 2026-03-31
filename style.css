@@ -28,6 +28,7 @@ body {
 =========================== */
 .view { display: none; }
 .view.active { display: block; }
+.hidden { display: none !important; }
 
 /* ===========================
    HOME
@@ -251,6 +252,13 @@ input[readonly] {
   transform: translateY(-1px);
 }
 .btn-primary:active { transform: translateY(0); }
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
 
 .btn-copy {
   background: var(--surface2);

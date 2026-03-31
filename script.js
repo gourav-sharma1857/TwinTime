@@ -35,6 +35,7 @@ function showToast(msg) {
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(() => t.classList.add('hidden'), 2000);
 }
+
 function formatDateShort(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   const dt = new Date(y, m - 1, d);
@@ -84,6 +85,24 @@ function formatHour(value) {
   return minutes === 0
     ? `${displayHour} ${suffix}`
     : `${displayHour}:${String(minutes).padStart(2, '0')} ${suffix}`;
+}
+
+function getFirebaseSetupHint(error) {
+  const message = String(error?.message || '').toLowerCase();
+
+  if (message.includes('api has not been used') || message.includes('firestore') && message.includes('disabled')) {
+    return 'Enable Firestore Database for this Firebase project, then wait a minute and retry.';
+  }
+
+  if (message.includes('missing or insufficient permissions') || message.includes('permission-denied')) {
+    return 'Your Firestore rules are still blocking access. Publish the rules for `meetgrid_events` in the Firebase Console.';
+  }
+
+  if (message.includes('not found')) {
+    return 'Create the Firestore Database in the Firebase Console first, then retry.';
+  }
+
+  return 'Double-check the Firebase web config and make sure Firestore is enabled for this project.';
 }
 
 // ---- Calendar ----
@@ -308,12 +327,20 @@ function updateGroupView() {
 function renderBestTimes() {
   const ev = currentEventData;
   const list = document.getElementById('best-times-list');
+  const card = document.getElementById('best-times-card');
   list.innerHTML = '';
-  if (!ev) return;
+
+  if (!ev) {
+    card.classList.add('hidden');
+    return;
+  }
 
   const participants = ev.availability || {};
   const total = Object.keys(participants).length;
-  if (total === 0) return;
+  if (total === 0) {
+    card.classList.add('hidden');
+    return;
+  }
 
   const slotCounts = {};
   Object.values(participants).forEach(slots => {
@@ -326,6 +353,12 @@ function renderBestTimes() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
+  if (sorted.length === 0) {
+    card.classList.add('hidden');
+    return;
+  }
+
+  card.classList.remove('hidden');
   sorted.forEach(([slot, count]) => {
     const [ds, h] = slot.split('_');
     const { day, num, mon } = formatDateShort(ds);
@@ -333,6 +366,17 @@ function renderBestTimes() {
     li.innerHTML = `<span>${day} ${mon} ${num}<br><small>${formatHour(h)}</small></span><span class="best-count">${count}/${total}</span>`;
     list.appendChild(li);
   });
+}
+
+function updateParticipantControls() {
+  const actions = document.getElementById('participant-actions');
+  const typedName = document.getElementById('participant-name').value.trim();
+  const hasKnownName = Boolean(currentParticipant || typedName);
+
+  actions.classList.toggle('hidden', !hasKnownName);
+  document.getElementById('save-availability-btn').disabled = currentMode !== 'edit' || !hasKnownName;
+  document.getElementById('rename-btn').disabled = !currentParticipant || !typedName;
+  document.getElementById('delete-btn').disabled = !hasKnownName;
 }
 
 function startEditingParticipant(name) {
@@ -343,13 +387,14 @@ function startEditingParticipant(name) {
   document.getElementById('participant-name').value = name;
   switchMode('edit');
   renderParticipants();
+  updateParticipantControls();
   return existing.length > 0;
 }
 
 async function saveMyAvailability() {
   const name = document.getElementById('participant-name').value.trim();
   if (!name) {
-    alert('Please enter your name first.');
+    showToast('Please enter your name first.');
     return;
   }
   if (!currentEventId) return;
@@ -378,22 +423,22 @@ async function saveMyAvailability() {
     });
 
     currentParticipant = name;
-    showToast('Availability saved! Firebase synced it live. ✓');
+    showToast('Availability saved!');
   } catch (error) {
     console.error(error);
-    alert(error.message || 'Could not save availability to Firebase.');
+    showToast(error.message || 'Could not save availability.');
   }
 }
 
 async function renameParticipant() {
   if (!currentParticipant || !currentEventId) {
-    alert('Select your existing availability first.');
+    showToast('Select your existing availability first.');
     return;
   }
 
   const newName = document.getElementById('participant-name').value.trim();
   if (!newName) {
-    alert('Enter the new name first.');
+    showToast('Enter the new name first.');
     return;
   }
   if (newName === currentParticipant) {
@@ -431,7 +476,7 @@ async function renameParticipant() {
     showToast('Name updated!');
   } catch (error) {
     console.error(error);
-    alert(error.message || 'Could not rename this participant.');
+    showToast(error.message || 'Could not rename this participant.');
   }
 }
 
@@ -439,7 +484,7 @@ async function deleteParticipantAvailability() {
   const typedName = document.getElementById('participant-name').value.trim();
   const targetName = currentParticipant || typedName;
   if (!targetName || !currentEventId) {
-    alert('Select or enter the name you want to remove.');
+    showToast('Select or enter the name you want to remove.');
     return;
   }
   if (!confirm(`Delete availability for ${targetName}?`)) return;
@@ -473,7 +518,7 @@ async function deleteParticipantAvailability() {
     switchMode('group');
   } catch (error) {
     console.error(error);
-    alert(error.message || 'Could not delete this participant.');
+    showToast(error.message || 'Could not delete this participant.');
   }
 }
 
@@ -495,6 +540,8 @@ function renderParticipants() {
     });
     list.appendChild(li);
   });
+
+  updateParticipantControls();
 }
 
 function switchMode(mode) {
@@ -502,6 +549,7 @@ function switchMode(mode) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   document.getElementById('group-legend').style.display = mode === 'group' ? 'flex' : 'none';
   buildGrid();
+  updateParticipantControls();
   if (mode === 'group') updateGroupView();
 }
 
@@ -511,9 +559,9 @@ async function createEvent() {
   const startH = parseFloat(document.getElementById('start-hour').value);
   const endH = parseFloat(document.getElementById('end-hour').value);
 
-  if (!title) { alert('Please enter an event name.'); return; }
-  if (selectedDates.length === 0) { alert('Please select at least one date.'); return; }
-  if (endH <= startH) { alert('End time must be after start time.'); return; }
+  if (!title) { showToast('Please enter an event name.'); return; }
+  if (selectedDates.length === 0) { showToast('Please select at least one date.'); return; }
+  if (endH <= startH) { showToast('End time must be after start time.'); return; }
 
   const id = genId();
   const payload = {
@@ -531,7 +579,7 @@ async function createEvent() {
     window.location.hash = id;
   } catch (error) {
     console.error(error);
-    alert('Could not create the event in Firebase. Check your Firebase config and Firestore rules.');
+    showToast(`${error.message || 'Could not create the event in Firebase.'}\n\n${getFirebaseSetupHint(error)}`);
   }
 }
 
@@ -548,6 +596,7 @@ function loadEvent(id) {
   mySlots = new Set();
 
   document.getElementById('participant-name').value = '';
+  updateParticipantControls();
   document.getElementById('home-view').classList.remove('active');
   document.getElementById('event-view').classList.add('active');
   document.getElementById('event-name-display').textContent = 'Loading…';
@@ -586,14 +635,38 @@ function loadEvent(id) {
     }
   }, (error) => {
     console.error(error);
-    alert('Could not load this event from Firebase.');
+    showToast(`${error.message || 'Could not load this event from Firebase.'}\n\n${getFirebaseSetupHint(error)}`);
   });
+}
+
+async function copyShareLink() {
+  const url = document.getElementById('share-url').value;
+  if (!url) return;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const shareInput = document.getElementById('share-url');
+      shareInput.focus();
+      shareInput.select();
+      document.execCommand('copy');
+    }
+
+    showToast('Link copied! 🔗');
+  } catch (error) {
+    console.error(error);
+    showToast('Could not copy the link automatically. Please copy it manually.');
+  }
 }
 
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
   populateHourSelects();
   renderCalendar();
+  updateParticipantControls();
+
+  document.getElementById('participant-name').addEventListener('input', updateParticipantControls);
 
   document.getElementById('prev-month').addEventListener('click', () => {
     calMonth--;
@@ -614,12 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('create-btn').addEventListener('click', createEvent);
 
-  document.getElementById('copy-btn').addEventListener('click', async () => {
-    const url = document.getElementById('share-url').value;
-    if (!url) return;
-    await navigator.clipboard.writeText(url);
-    showToast('Link copied! 🔗');
-  });
+  document.getElementById('copy-btn').addEventListener('click', copyShareLink);
 
   document.getElementById('back-home').addEventListener('click', (e) => {
     e.preventDefault();
@@ -629,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('start-filling-btn').addEventListener('click', () => {
     const name = document.getElementById('participant-name').value.trim();
     if (!name) {
-      alert('Enter your name first!');
+      showToast('Enter your name first!');
       return;
     }
 
@@ -681,6 +749,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('event-view').classList.remove('active');
       document.getElementById('home-view').classList.add('active');
       document.getElementById('participant-name').value = '';
+      document.getElementById('best-times-card').classList.add('hidden');
+      updateParticipantControls();
       setShareUrl('');
     }
   }

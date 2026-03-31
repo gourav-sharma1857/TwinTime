@@ -1,0 +1,11 @@
+{
+  "name": "twintime",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "python -m http.server 5500"
+  },
+  "dependencies": {
+    "firebase": "^12.11.0"
+  }
+}

@@ -1,4 +1,15 @@
-/.env
-/firebase-config.js
-/firebase-debug.log
-/firestore.rule
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Firebase debug output
+firebase-debug.log
+
+# Dependencies
+node_modules/
+
+# Build and system files
+dist/
+.DS_Store
+Thumbs.db
