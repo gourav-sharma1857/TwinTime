@@ -5,7 +5,16 @@
 
 # Firebase debug output
 firebase-debug.log
+firebase-config.js
+firebase.rules
 
+.firebase-debug.log
+.firebase-config.js
+.firebase.rules
+
+/.firebase-debug.log
+/.firebase-config.js
+/.firebase.rules
 # Dependencies
 node_modules/
 
