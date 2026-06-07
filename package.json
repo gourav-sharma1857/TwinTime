@@ -1,11 +1,17 @@
 {
+  "homepage": "https://gourav-sharma1857.github.io/TwinTime",
+
   "name": "twintime",
   "private": true,
   "type": "module",
   "scripts": {
-    "serve": "python -m http.server 5500"
+    "serve": "python -m http.server 5500",
+    "predeploy": "npm run build",
+  "deploy": "gh-pages -d build"
+    
   },
   "dependencies": {
-    "firebase": "^12.11.0"
+    "firebase": "^12.11.0",
+    "gh-pages": "^6.3.0"
   }
 }
