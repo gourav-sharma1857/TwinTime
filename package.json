@@ -6,12 +6,15 @@
   "type": "module",
   "scripts": {
     "serve": "python -m http.server 5500",
+    "build": "node ./scripts/build-site.js",
     "predeploy": "npm run build",
-  "deploy": "gh-pages -d build"
-    
+    "deploy": "gh-pages -d build"
   },
   "dependencies": {
     "firebase": "^12.11.0",
     "gh-pages": "^6.3.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1"
   }
 }
